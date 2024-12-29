@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.12.35527.113 d17.12
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MIP SDK Tray Manager", "MIP SDK Tray Manager.csproj", "{EEA9A081-AED8-4AD7-9808-4FF536071CD5}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
+		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{EEA9A081-AED8-4AD7-9808-4FF536071CD5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EEA9A081-AED8-4AD7-9808-4FF536071CD5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EEA9A081-AED8-4AD7-9808-4FF536071CD5}.Debug|x64.ActiveCfg = Debug|x64
+		{EEA9A081-AED8-4AD7-9808-4FF536071CD5}.Debug|x64.Build.0 = Debug|x64
+		{EEA9A081-AED8-4AD7-9808-4FF536071CD5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EEA9A081-AED8-4AD7-9808-4FF536071CD5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EEA9A081-AED8-4AD7-9808-4FF536071CD5}.Release|x64.ActiveCfg = Release|x64
+		{EEA9A081-AED8-4AD7-9808-4FF536071CD5}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
