@@ -6,9 +6,9 @@ using System.Windows.Forms;
 using log4net;
 using Newtonsoft.Json;
 
-public class HttpRequestListener : Form
+public class HttpRequestListener
 {
-    private static readonly ILog Logger = LogManager.GetLogger(typeof(HttpRequestListener));
+    private static readonly ILog Logger = LogManager.GetLogger("RollingFileAppender");
     private readonly HttpListener _listener;
     private HttpListenerContext _currentContext;
 
@@ -50,24 +50,33 @@ public class HttpRequestListener : Form
             string path = context.Request.Url.AbsolutePath;
             Logger.Info($"Received request: {context.Request.HttpMethod} {path}");
 
-            if (context.Request.HttpMethod == "POST" && path.Equals("/logFetch/", StringComparison.OrdinalIgnoreCase))
+            if (context.Request.HttpMethod == "POST")
             {
-                using (var reader = new StreamReader(context.Request.InputStream, context.Request.ContentEncoding))
+                if (path.Equals("/logFetch/", StringComparison.OrdinalIgnoreCase))
                 {
-                    string requestBody = reader.ReadToEnd();
-                    Logger.Debug($"Received request body: {requestBody}");
+                    using (var reader = new StreamReader(context.Request.InputStream, context.Request.ContentEncoding))
+                    {
+                        string requestBody = reader.ReadToEnd();
+                        Logger.Debug($"Received request body: {requestBody}");
 
-                    RequestReceived?.Invoke(requestBody);
-                    responseString = "Request processed successfully.";
+
+                        RequestReceived?.Invoke(requestBody);
+                        responseString = "Request processed successfully.";
+                    }
+                }
+                else
+                {
+                    responseString = "Invalid route or HTTP method.Only /logFetch/ is supported.";
+                    Logger.Warn($"Invalid request: {context.Request.HttpMethod} {path}");
                 }
             }
             else
             {
-                responseString = "Invalid route or HTTP method.";
+                responseString = "Only POST requests are supported.";
                 Logger.Warn($"Invalid request: {context.Request.HttpMethod} {path}");
             }
 
-            SendResponse(responseString);
+            //SendResponse(responseString);
         }
         catch (Exception ex)
         {
@@ -103,7 +112,15 @@ public class HttpRequestListener : Form
 
     public void Stop()
     {
-        _listener.Stop();
-        Logger.Info("HTTP listener stopped.");
+        
+        if (_listener.IsListening)
+        {
+            Logger.Error("Failed to stop HTTP listener.");
+            MessageBox.Show("Failed to stop HTTP listener.");
+            _listener.Stop();
+            //_listener.Close();
+        }
+        else
+            Logger.Info("HTTP listener stopped.");
     }
 }

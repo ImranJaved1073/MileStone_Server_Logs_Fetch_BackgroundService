@@ -1,83 +1,45 @@
-﻿using System;
+﻿using MIP_SDK_Tray_Manager.ModelClasses;
+using NAudio.CoreAudioApi;
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Data;
 using System.Drawing;
-using System.Diagnostics;
-using System.Linq;
-using System.Windows.Forms;
-using VideoOS.Platform.SDK.UI.LoginDialog;
-using System.Collections;
-using System.Runtime.InteropServices; // Import this for DllImport
-using System.Security;
-using System.Net;
-using VideoOS.Platform.Login;
-using VideoOS.Platform.SDK.Platform;
-using System.ServiceProcess;
-using System.Net.Http;
-using System.Text;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System.Threading;
 using System.Globalization;
 using System.IO;
+using System.Linq;
+using System.Net;
+using System.Security.Policy;
+using System.Security;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using VideoOS.Platform.Login;
+using VideoOS.Platform.SDK.Platform;
 using log4net;
+using System.Configuration;
 
 namespace MIP_SDK_Tray_Manager
 {
-    public class SystemLogEntry
-    {
-        public DateTime LocalTime { get; set; }       // Local time of the event
-        public string SourceType { get; set; }      // Type of the source
-        public string Group { get; set; }           // Group/category of the log
-        public string MessageText { get; set; }     // Message associated with the log
-        public string LogLevel { get; set; }        // Log level (e.g., Info, Error)
-        public string SourceName { get; set; }      // Source name (device or server)
-        public int Number { get; set; }          // Unique number identifier for the log
-        public string EventType { get; set; }       // Type of event
-        public string Category { get; set; }        // Category of the log (e.g., Hardware and devices)
-    }
-
-
-
-    public class AuditLogEntry
-    {
-        public int Number { get; set; }       // Local time of the event
-        public DateTime LocalTime { get; set; }      // Type of the source
-        public string MessageText { get; set; }           // Group/category of the log
-        public string Permission { get; set; }     // Message associated with the log
-        public string Category { get; set; }        // Log level (e.g., Info, Error)
-        public string SourceType { get; set; }      // Source name (device or server)
-        public string SourceName { get; set; }          // Unique number identifier for the log
-        public string User { get; set; }       // Type of event
-        public string UserLocation { get; set; }       // Type of event
-        public string Group { get; set; }        // Category of the log (e.g., Hardware and devices)
-    }
-
-    public class RuleLogEntry
-    {
-        public int Number { get; set; }       // Local time of the event
-        public DateTime LocalTime { get; set; }      // Type of the source
-        public string MessageText { get; set; }           // Group/category of the log
-        public string Category { get; set; }     // Message associated with the log
-        public string SourceType { get; set; }        // Log level (e.g., Info, Error)
-        public string SourceName { get; set; }      // Source name (device or server)
-        public string EventType { get; set; }          // Unique number identifier for the log
-        public string RuleName { get; set; }       // Type of event
-        public string ServiceName { get; set; }       // Type of event
-        public string Group { get; set; }        // Category of the log (e.g., Hardware and devices)
-    }
-    public partial class Form1 : Form
+    public partial class Logs : Form
     {
         // DLL Import to allocate a console
         private RichTextBox logTextBox;
 
-        private static readonly ILog Log = LogManager.GetLogger(typeof(Form1));
+        private static readonly ILog Log = LogManager.GetLogger("RollingFileAppender");
+        private static readonly ILog Status = LogManager.GetLogger("RollingFileAppenderStatus");
+        private static readonly Guid IntegrationId = new Guid(ConfigurationManager.AppSettings["IntegrationId"]);
+        //private const string IntegrationName = "Log Read";
+        //private const string Version = "1.0";
+        //private const string ManufacturerName = "Sample Manufacturer";
+        private static readonly string IntegrationName = ConfigurationManager.AppSettings["IntegrationName"];
+        private static readonly string Version = ConfigurationManager.AppSettings["Version"];
+        private static readonly string ManufacturerName = ConfigurationManager.AppSettings["ManufacturerName"];
+        private StatusLogic statusLogic;
 
-        private static readonly Guid IntegrationId = new Guid("2D298EEF-3BA0-4EC7-944A-C8401DC95767");
-        private const string IntegrationName = "Log Read";
-        private const string Version = "1.0";
-        private const string ManufacturerName = "Sample Manufacturer";
         private static bool Connected = false;
         enum Authorizationmodes
         {
@@ -86,21 +48,20 @@ namespace MIP_SDK_Tray_Manager
             Basic
         };
 
-        static string _url = "http://ec2-3-111-16-24.ap-south-1.compute.amazonaws.com/"; // Replace with your actual server address
+        //static string _url = "http://ec2-3-111-16-24.ap-south-1.compute.amazonaws.com/"; // Replace with your actual server address
+        static string _url = ConfigurationManager.AppSettings["ApiBaseUrl"];
         static Authorizationmodes _auth = Authorizationmodes.Basic; // Set your preferred authentication mode (Basic, Windows, DefaultWindows)
-        static string _user = "apiuser"; // Replace with your actual username
-        static SecureString _securePwd = ConvertToSecureString("EyeDash@2024"); // Replace with your actual password
+        //static string _user = "apiuser"; // Replace with your actual username
+        //static SecureString _securePwd = ConvertToSecureString("EyeDash@2024"); // Replace with your actual password
+        static string _user = ConfigurationManager.AppSettings["Username"];
+        static SecureString _securePwd = ConvertToSecureString(ConfigurationManager.AppSettings["Password"]);
         static bool _secureOnly = false; // change to true if you need to enforce secure communication
 
-
+        private HttpRequestListener httpListener = new HttpRequestListener(ConfigurationManager.AppSettings["httpListener"]); // Change port as needed
         private static DateTime beginTime;
         private static DateTime endTime;
 
-        private NotifyIcon trayIcon = null;
-        private BackgroundWorker backgroundWorker = null;
-        private bool serviceRunning = false;
-
-        public Form1()
+        public Logs()
         {
             logTextBox = new RichTextBox
             {
@@ -114,98 +75,8 @@ namespace MIP_SDK_Tray_Manager
             this.Text = "Log Viewer";
             this.Size = new System.Drawing.Size(800, 600);
             InitializeComponent();
-            InitializeTrayIcon();
-            InitializeBackgroundService();
-            Hide(); // Hide the main form on startup
         }
 
-
-        private void Hide()
-        {
-            this.WindowState = FormWindowState.Minimized;
-            this.ShowInTaskbar = false;
-        }
-
-        private void Show()
-        {
-            this.WindowState = FormWindowState.Normal;
-            this.ShowInTaskbar = true;
-        }
-
-        private void InitializeTrayIcon()
-        {
-            // Create the tray icon
-            trayIcon = new NotifyIcon
-            {
-                Icon = new Icon("icon_running.ico"), // Replace with your .ico file
-                Text = "Background Service App",
-                Visible = true
-            };
-
-            // Create context menu
-            var contextMenu = new ContextMenuStrip();
-            contextMenu.Items.Add("Start Service", null, StartService);
-            contextMenu.Items.Add("Stop Service", null, StopService);
-            contextMenu.Items.Add("View Logs", null, ViewLogs);
-            contextMenu.Items.Add("Exit", null, ExitApplication);
-
-            trayIcon.ContextMenuStrip = contextMenu;
-        }
-
-        private void InitializeBackgroundService()
-        {
-            // Set up the background worker
-            backgroundWorker = new BackgroundWorker
-            {
-                WorkerSupportsCancellation = true
-            };
-            backgroundWorker.DoWork += BackgroundWorker_DoWork;
-            backgroundWorker.RunWorkerCompleted += BackgroundWorker_Completed;
-        }
-
-        private void StartService(object sender, EventArgs e)
-        {
-            if (!serviceRunning)
-            {
-                Hide(); // Hide the form when the service starts
-                Task.Run(() => MainLogic());
-                serviceRunning = true;
-                trayIcon.Icon = new Icon("icon_running.ico");
-                trayIcon.Text = "Service Running...";
-                backgroundWorker.RunWorkerAsync();
-                Show(); // Show the form when the service starts
-            }
-            else
-            {
-                Task.Run(() => MainLogic());
-            }
-        }
-
-        private void StopService(object sender, EventArgs e)
-        {
-            if (serviceRunning)
-            {
-                serviceRunning = false;
-                trayIcon.Icon = new Icon("icon_running.ico");
-                trayIcon.Text = "Service Stopped.";
-                backgroundWorker.CancelAsync();
-                Hide(); // Hide the form when the service stops
-            }
-        }
-
-        private void ViewLogs(object sender, EventArgs e)
-        {
-            // Open the log folder
-            string logFolderPath = "C:\\Logs";
-            Process.Start("explorer.exe", logFolderPath);
-        }
-
-        private void ExitApplication(object sender, EventArgs e)
-        {
-            // Cleanup and exit
-            trayIcon.Visible = false;
-            Application.Exit();
-        }
 
         private void AppendLog(string message)
         {
@@ -232,7 +103,7 @@ namespace MIP_SDK_Tray_Manager
             _securePwd.MakeReadOnly();
 
             // Start HTTP Listener
-            var httpListener = new HttpRequestListener("http://+:80/logFetch/"); // Change port as needed
+            
             Log.Info("HTTP Listener initialized.");
 
 
@@ -288,14 +159,13 @@ namespace MIP_SDK_Tray_Manager
                 }
                 catch (Exception ex)
                 {
-                    Log.Error($"An error occurred while processing the request: {ex.Message}",ex);
+                    Log.Error($"An error occurred while processing the request: {ex.Message}", ex);
                     AppendLog($"An error occurred while processing the request: {ex.Message}");
                     httpListener.SendError($"An error occurred: {ex.Message}"); // Send error without passing context
                 }
             };
 
             // Start listening in a separate task
-            Task.Run(() => httpListener.Start());
             Task.Run(() =>
             {
                 Log.Info("Starting HTTP Listener...");
@@ -305,8 +175,59 @@ namespace MIP_SDK_Tray_Manager
                 AppendLog("HTTP Listener is running.");
             });
 
+
+
+            // Now, handle the status reading logic in parallel
+
+            Task.Run(() =>
+            {
+                // Secure password logic here
+                _securePwd.MakeReadOnly();
+
+                // Wait until the first API request is received
+                Status.Info("Waiting for incoming API request...");
+                AppendLog("Waiting for incoming API request...");
+
+                // Automatic login retry logic
+                int maxRetries = 5; // Maximum number of retries
+                int retryDelay = 5000; // Delay between retries in milliseconds (5 seconds)
+                int attempt = 0;
+                bool isConnected = false;
+
+                while (attempt < maxRetries && !isConnected)
+                {
+                    attempt++;
+                    Status.Info($"Attempting to connect (Attempt {attempt}/{maxRetries})...");
+                    AppendLog($"Attempting to connect (Attempt {attempt}/{maxRetries})...");
+
+                    if (LoginUsingCredentials())
+                    {
+                        Status.Info("Connected to the server.");
+                        AppendLog("Connected to the server.");
+                        isConnected = true;
+                        statusLogic = new StatusLogic();
+                        //statusLogic.Show();
+                        statusLogic.Initialize();
+                    }
+                    else
+                    {
+                        Status.Warn("Failed to connect. Retrying in 5 seconds...");
+                        AppendLog("Failed to connect. Retrying in 5 seconds...");
+                        Task.Delay(retryDelay); // Wait before retrying
+                    }
+                }
+
+                if (!isConnected)
+                {
+                    Status.Warn("Exceeded maximum retry attempts. Unable to connect.");
+                    AppendLog("Exceeded maximum retry attempts. Unable to connect.");
+                }
+            });
+
+
             Log.Info("Application is running. Waiting for requests...");
             AppendLog("Application is running. Waiting for requests...");
+
         }
 
 
@@ -348,7 +269,7 @@ namespace MIP_SDK_Tray_Manager
         /// <summary>
         /// Converts a regular string password to a SecureString
         /// </summary>
-        static SecureString ConvertToSecureString(string password)
+        public static SecureString ConvertToSecureString(string password)
         {
             SecureString secureString = new SecureString();
             foreach (char c in password)
@@ -362,7 +283,7 @@ namespace MIP_SDK_Tray_Manager
         /// Login routine using hardcoded credentials
         /// </summary>
         /// <returns></returns> True if successfully logged in
-        static private bool LoginUsingCredentials()
+        static public bool LoginUsingCredentials()
         {
             Uri uri = new UriBuilder(_url).Uri;
             CredentialCache cc = new CredentialCache();
@@ -531,8 +452,8 @@ namespace MIP_SDK_Tray_Manager
 
         private async Task<ArrayList> UploadLogData(string group, int page)
         {
-            System.Collections.ArrayList result;
-            System.Collections.ArrayList names;
+            ArrayList result;
+            ArrayList names;
 
 
             //Console.WriteLine($"beginTime: {beginTime}, endTime: {endTime}, group: {group}");
@@ -599,27 +520,15 @@ namespace MIP_SDK_Tray_Manager
             return DateTime.MinValue;  // Return default DateTime value if parsing fails
         }
 
-        private void BackgroundWorker_DoWork(object sender, DoWorkEventArgs e)
-        {
-            // Simulate service work
-            while (!backgroundWorker.CancellationPending)
-            {
-                // Replace with Milestone SDK or other background logic
-                System.Threading.Thread.Sleep(1000);
-
-            }
-        }
-
-        private void BackgroundWorker_Completed(object sender, RunWorkerCompletedEventArgs e)
-        {
-            trayIcon.Text = "Service Stopped.";
-        }
-
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
-            // Prevent form from closing; minimize to tray instead
-            e.Cancel = true;
-            Hide();
+            statusLogic.Dispose();
+            Dispose();
+            base.OnFormClosing(e);
+            //stop the listener
+            //httpListener.Stop();
+            
+
         }
     }
 }

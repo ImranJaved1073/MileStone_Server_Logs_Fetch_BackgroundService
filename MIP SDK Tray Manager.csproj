@@ -273,17 +273,41 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Form1.cs" />
-    <Compile Include="Form1.Designer.cs">
-      <DependentUpon>Form1.cs</DependentUpon>
-    </Compile>
-    <Compile Include="HttpRequestListener.cs">
+    <Compile Include="Logs.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="Logs.Designer.cs">
+      <DependentUpon>Logs.cs</DependentUpon>
+    </Compile>
+    <Compile Include="MIPSDK_TrayManager.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="MIPSDK_TrayManager.Designer.cs">
+      <DependentUpon>MIPSDK_TrayManager.cs</DependentUpon>
+    </Compile>
+    <Compile Include="HttpRequestListener.cs" />
+    <Compile Include="ModelClasses\AuditLogEntry.cs" />
+    <Compile Include="ModelClasses\EventStatus.cs" />
+    <Compile Include="ModelClasses\FQIDRepresentation.cs" />
+    <Compile Include="ModelClasses\RuleLogEntry.cs" />
+    <Compile Include="ModelClasses\ServerInfo.cs" />
+    <Compile Include="ModelClasses\SystemLogEntry.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="StatusLogic.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="StatusLogic.Designer.cs">
+      <DependentUpon>StatusLogic.cs</DependentUpon>
+    </Compile>
+    <Compile Include="TrayManagerService.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <EmbeddedResource Include="HttpRequestListener.resx">
       <DependentUpon>HttpRequestListener.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="MIPSDK_TrayManager.resx">
+      <DependentUpon>MIPSDK_TrayManager.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
@@ -294,8 +318,11 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
+    <EmbeddedResource Include="StatusLogic.resx">
+      <DependentUpon>StatusLogic.cs</DependentUpon>
+    </EmbeddedResource>
     <None Include="log4net.config">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
@@ -309,7 +336,9 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="App.config" />
+    <None Include="App.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Content Include="3rd_party_software_terms_and_conditions.txt" />

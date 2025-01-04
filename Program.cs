@@ -17,9 +17,11 @@ namespace MIP_SDK_Tray_Manager
         static void Main()
         {
             XmlConfigurator.Configure(new FileInfo("log4net.config"));
+
+
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new Form1());
+            Application.Run(new MIPSDK_TrayManager());
         }
     }
 }
