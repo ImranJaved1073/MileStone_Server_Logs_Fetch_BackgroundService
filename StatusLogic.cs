@@ -447,9 +447,6 @@ namespace MIP_SDK_Tray_Manager
             this.Controls.Remove(logTextBox);
             this.Dispose();
             base.OnFormClosing(e);
-            
-            //dispose the rich text box
-            
         }
     }
 }

@@ -5,21 +5,25 @@ using System.Text;
 using System.Windows.Forms;
 using log4net;
 using Newtonsoft.Json;
+using System.IdentityModel.Tokens.Jwt;
+using Microsoft.IdentityModel.Tokens;
+using System.Net.Sockets;
 
 public class HttpRequestListener
 {
     private static readonly ILog Logger = LogManager.GetLogger("RollingFileAppender");
     private readonly HttpListener _listener;
     private HttpListenerContext _currentContext;
+    private readonly string _jwtSecretKey;
 
     public event Action<string> RequestReceived;
 
-    public HttpRequestListener(string prefix)
+    public HttpRequestListener(string prefix, string jwtSecretKey)
     {
         _listener = new HttpListener();
         _listener.Prefixes.Add(prefix);
+        _jwtSecretKey = jwtSecretKey;
     }
-
     public void Start()
     {
         try
@@ -50,6 +54,12 @@ public class HttpRequestListener
             string path = context.Request.Url.AbsolutePath;
             Logger.Info($"Received request: {context.Request.HttpMethod} {path}");
 
+            if (!ValidateToken(context))
+            {
+                SendError("Unauthorized access.");
+                return;
+            }
+
             if (context.Request.HttpMethod == "POST")
             {
                 if (path.Equals("/logFetch/", StringComparison.OrdinalIgnoreCase))
@@ -63,6 +73,11 @@ public class HttpRequestListener
                         RequestReceived?.Invoke(requestBody);
                         responseString = "Request processed successfully.";
                     }
+                }
+                else if (path.Equals("/connect/", StringComparison.OrdinalIgnoreCase))
+                {
+                    responseString = "Connected.";
+                    SendResponse(responseString);
                 }
                 else
                 {
@@ -82,6 +97,29 @@ public class HttpRequestListener
         {
             Logger.Error("Error handling request.", ex);
             SendError("Internal server error.");
+        }
+    }
+
+    private bool ValidateToken(HttpListenerContext context)
+    {
+        try
+        {
+            string authHeader = context.Request.Headers["Authorization"];
+            if (string.IsNullOrEmpty(authHeader) || !authHeader.StartsWith("Bearer "))
+            {
+                Logger.Warn("Authorization header missing or invalid.");
+                return false;
+            }
+
+            string token = authHeader.Substring("Bearer ".Length).Trim();
+
+
+            return token == _jwtSecretKey;
+        }
+        catch (Exception ex)
+        {
+            Logger.Error("Token validation failed.", ex);
+            return false;
         }
     }
 
@@ -112,15 +150,13 @@ public class HttpRequestListener
 
     public void Stop()
     {
-        
+
         if (_listener.IsListening)
         {
-            Logger.Error("Failed to stop HTTP listener.");
-            MessageBox.Show("Failed to stop HTTP listener.");
             _listener.Stop();
-            //_listener.Close();
-        }
-        else
             Logger.Info("HTTP listener stopped.");
+            MessageBox.Show("HTTP listener stopped.");
+        }
+
     }
 }

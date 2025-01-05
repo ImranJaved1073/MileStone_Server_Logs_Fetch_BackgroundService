@@ -38,7 +38,7 @@ namespace MIP_SDK_Tray_Manager
         private static readonly string IntegrationName = ConfigurationManager.AppSettings["IntegrationName"];
         private static readonly string Version = ConfigurationManager.AppSettings["Version"];
         private static readonly string ManufacturerName = ConfigurationManager.AppSettings["ManufacturerName"];
-        private StatusLogic statusLogic;
+        private static readonly string secretKey = ConfigurationManager.AppSettings["JwtSecretKey"];
 
         private static bool Connected = false;
         enum Authorizationmodes
@@ -57,7 +57,7 @@ namespace MIP_SDK_Tray_Manager
         static SecureString _securePwd = ConvertToSecureString(ConfigurationManager.AppSettings["Password"]);
         static bool _secureOnly = false; // change to true if you need to enforce secure communication
 
-        private HttpRequestListener httpListener = new HttpRequestListener(ConfigurationManager.AppSettings["httpListener"]); // Change port as needed
+        private HttpRequestListener httpListener = new HttpRequestListener(ConfigurationManager.AppSettings["httpListener"], secretKey); // Change port as needed
         private static DateTime beginTime;
         private static DateTime endTime;
 
@@ -103,7 +103,7 @@ namespace MIP_SDK_Tray_Manager
             _securePwd.MakeReadOnly();
 
             // Start HTTP Listener
-            
+
             Log.Info("HTTP Listener initialized.");
 
 
@@ -205,7 +205,7 @@ namespace MIP_SDK_Tray_Manager
                         Status.Info("Connected to the server.");
                         AppendLog("Connected to the server.");
                         isConnected = true;
-                        statusLogic = new StatusLogic();
+                        StatusLogic statusLogic = new StatusLogic();
                         //statusLogic.Show();
                         statusLogic.Initialize();
                     }
@@ -522,13 +522,10 @@ namespace MIP_SDK_Tray_Manager
 
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
-            statusLogic.Dispose();
-            Dispose();
+            this.Dispose();
             base.OnFormClosing(e);
             //stop the listener
             //httpListener.Stop();
-            
-
         }
     }
 }

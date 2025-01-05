@@ -160,10 +160,14 @@ namespace MIP_SDK_Tray_Manager
             this.Dispose();
             if (Application.OpenForms.OfType<StatusLogic>() != null)
             {
-                Application.OpenForms.OfType<StatusLogic>().First().Dispose();
+                if (Application.OpenForms.OfType<StatusLogic>().Count() > 0)
+                {
+                    Application.OpenForms.OfType<StatusLogic>().First().Dispose();
+                    Application.Restart();
+                }
+                else
+                    Application.Restart();
             }
-            // Reinitialize and reopen the form
-            Application.Restart(); // Restart the application
         }
 
         private void ViewLogs(object sender, EventArgs e)
